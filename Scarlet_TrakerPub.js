@@ -147,11 +147,11 @@ client.on('messageCreate', async (receivedMessage) => {
           console.log(`Rows updated: ${this.changes}`);
       }
     });
-if (receivedMessage.content.substr(0, 6) == "scarlet" || receivedMessage.content.substr(0, 2) == "s!") {
-    if (receivedMessage.content.substr(0, 6) == "scarlet") {
-        var fullCommand = receivedMessage.content.substr(7) // Remove the "scarlet "
+if (receivedMessage.content.substring(0, 6) == "scarlet" || receivedMessage.content.substring(0, 2) == "s!") {
+    if (receivedMessage.content.substring(0, 6) == "scarlet") {
+        var fullCommand = receivedMessage.content.substring(7) // Remove the "scarlet "
     } else {
-        var fullCommand = receivedMessage.content.substr(2)
+        var fullCommand = receivedMessage.content.substring(2)
     }
     let splitCommand = fullCommand.split(" ") // Split the message up in to pieces for each space
     let primaryCommand = splitCommand[0] // The first word directly after the exclamation is the command
@@ -330,6 +330,41 @@ if (receivedMessage.content.substr(0, 6) == "scarlet" || receivedMessage.content
         }
     });
     }
+  } else if (primaryCommand == "activityscore") {
+    // overall activity ranking
+    // text + vc
+    db.get(vquery, [receivedMessage.author.id.concat("+", receivedMessage.guild.id)], (err, row) => {
+      if (err) {
+          console.error(err.message);
+      return;
+  }
+      if (row) {
+          time = secondsToDHMS(row.total_voice);
+          db.get(query, [receivedMessage.author.id.concat("+", receivedMessage.guild.id)], (err, row) => {
+            if (err) {
+                console.error(err.message);
+            return;
+        }
+            if (row) {
+              // normalize vctime vs messages for proportional rankings
+              //  in terms of activity, spending time in VC is worth more than messages in chat
+              const vctime = time
+              const proportional_msgcount = row.msgs / 10;
+              const normalized_score = vctime + proportional_msgcount;
+
+              console.log(`Normalized score for ${receivedMessage.author.id} in ${receivedMessage.guild.id}: ${normalized_score}`);
+              return receivedMessage.reply(`${receivedMessage.author.username} has a score of ${normalized_score}`)
+
+             } else {
+                console.log(`No record found for ${receivedMessage.author.id} in ${receivedMessage.guild.id}`);
+            }
+        });
+      
+      } else {
+          console.log(`No record found for ${receivedMessage.author.id} in ${receivedMessage.guild.id}`);
+      }
+  });
+
   }
    
 }
